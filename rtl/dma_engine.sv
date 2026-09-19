@@ -19,7 +19,7 @@ module dma_engine #(parameter int ADDR_WIDTH = 32, parameter int DATA_WIDTH = 32
         else begin
             dma_done_irq <= 1'b0;
             case (state)
-                ST_IDLE: if (cfg_start) begin cur_src <= cfg_src_addr; cur_dst <= cfg_dst_addr; rem_beats <= cfg_len_beats; m_rd_valid <= 1'b1; state <= ST_READ; end
+                ST_IDLE: if (cfg_start) begin if (cfg_len_beats == 16'd0) state <= ST_DONE; else begin cur_src <= cfg_src_addr; cur_dst <= cfg_dst_addr; rem_beats <= cfg_len_beats; m_rd_valid <= 1'b1; state <= ST_READ; end end
                 ST_READ: begin if (m_rd_valid && m_rd_ready) m_rd_valid <= 1'b0; if (m_rd_rvalid) begin data_buf <= m_rd_rdata; m_wr_valid <= 1'b1; state <= ST_WRITE; end end
                 ST_WRITE: if (m_wr_valid && m_wr_ready) begin m_wr_valid <= 1'b0; cur_src <= cur_src + 32'd4; cur_dst <= cur_dst + 32'd4; if (rem_beats == 16'd1) state <= ST_DONE; else begin rem_beats <= rem_beats - 16'd1; m_rd_valid <= 1'b1; state <= ST_READ; end end
                 ST_DONE: begin dma_done_irq <= 1'b1; state <= ST_IDLE; end
